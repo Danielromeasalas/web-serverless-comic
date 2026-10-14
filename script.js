@@ -20,6 +20,8 @@ const contactForm = document.querySelector("#contactForm");
 const nombreInput = document.querySelector("#nombre");
 const emailInput = document.querySelector("#email");
 const formSuccess = document.querySelector("#formSuccess");
+const submitBtn = document.querySelector("#submitBtn");
+const apiUrl = "https://0q6yhdh7ve.execute-api.us-east-1.amazonaws.com/contacto";
 
 function setFieldError(input, message) {
   const error = document.querySelector(`#${input.id}Error`);
@@ -28,7 +30,7 @@ function setFieldError(input, message) {
   input.setAttribute("aria-describedby", error.id);
 }
 
-contactForm.addEventListener("submit", (event) => {
+contactForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   formSuccess.hidden = true;
 
@@ -44,10 +46,36 @@ contactForm.addEventListener("submit", (event) => {
     return;
   }
 
-  formSuccess.textContent = `¡Gracias, ${nombre}! Tu mensaje se ha enviado correctamente. Nos pondremos en contacto contigo pronto.`;
-  formSuccess.hidden = false;
-  contactForm.reset();
-  nombreInput.focus();
+  const originalButtonContent = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.setAttribute("aria-busy", "true");
+  submitBtn.textContent = "Enviando...";
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ nombre, email }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`La API respondió con estado ${response.status}.`);
+    }
+
+    formSuccess.textContent = `¡Gracias, ${nombre}! Tu mensaje se ha enviado correctamente. Nos pondremos en contacto contigo pronto.`;
+    formSuccess.hidden = false;
+    contactForm.reset();
+    nombreInput.focus();
+  } catch (error) {
+    console.error("No se pudo enviar el formulario de contacto.", error);
+    window.alert("No se pudo enviar tu mensaje. Inténtalo de nuevo más tarde.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.removeAttribute("aria-busy");
+    submitBtn.innerHTML = originalButtonContent;
+  }
 });
 
 [nombreInput, emailInput].forEach((input) => {
