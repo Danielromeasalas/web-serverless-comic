@@ -19,8 +19,8 @@ navLinks.querySelectorAll("a").forEach((link) => {
 const contactForm = document.querySelector("#contactForm");
 const nombreInput = document.querySelector("#nombre");
 const emailInput = document.querySelector("#email");
-const formSuccess = document.querySelector("#formSuccess");
 const submitBtn = document.querySelector("#submitBtn");
+const formMessage = document.querySelector("#formMessage");
 const apiUrl = "https://0q6yhdh7ve.execute-api.us-east-1.amazonaws.com/contacto";
 
 function setFieldError(input, message) {
@@ -30,9 +30,15 @@ function setFieldError(input, message) {
   input.setAttribute("aria-describedby", error.id);
 }
 
+function showMessage(message, type) {
+  formMessage.textContent = message;
+  formMessage.className = `form-message ${type}`;
+  formMessage.hidden = false;
+}
+
 contactForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  formSuccess.hidden = true;
+  formMessage.hidden = true;
 
   const nombre = nombreInput.value.trim();
   const email = emailInput.value.trim();
@@ -46,17 +52,14 @@ contactForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const originalButtonContent = submitBtn.innerHTML;
   submitBtn.disabled = true;
   submitBtn.setAttribute("aria-busy", "true");
-  submitBtn.textContent = "Enviando...";
+  submitBtn.textContent = "Procesando entrada...";
 
   try {
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nombre, email }),
     });
 
@@ -64,17 +67,18 @@ contactForm.addEventListener("submit", async (event) => {
       throw new Error(`La API respondió con estado ${response.status}.`);
     }
 
-    formSuccess.textContent = `¡Gracias, ${nombre}! Tu mensaje se ha enviado correctamente. Nos pondremos en contacto contigo pronto.`;
-    formSuccess.hidden = false;
     contactForm.reset();
+    setFieldError(nombreInput, "");
+    setFieldError(emailInput, "");
+    showMessage(`¡BAM, ${nombre}! Tu registro está en marcha. Pronto recibirás noticias de Viñeta Fest.`, "success");
     nombreInput.focus();
   } catch (error) {
-    console.error("No se pudo enviar el formulario de contacto.", error);
-    window.alert("No se pudo enviar tu mensaje. Inténtalo de nuevo más tarde.");
+    console.error("No se pudo completar el registro en Viñeta Fest.", error);
+    showMessage("¡Ups! No hemos podido procesar tu entrada. Comprueba tu conexión e inténtalo de nuevo.", "error");
   } finally {
     submitBtn.disabled = false;
     submitBtn.removeAttribute("aria-busy");
-    submitBtn.innerHTML = originalButtonContent;
+    submitBtn.innerHTML = '¡Apúntame! <span aria-hidden="true">➜</span>';
   }
 });
 
